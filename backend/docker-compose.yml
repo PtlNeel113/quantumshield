@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: quantumshield-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://quantumshield:qs_secret_2025@postgres:5432/quantumshield
+      - REDIS_URL=redis://redis:6379/0
+      - NEO4J_URI=bolt://neo4j:7687
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      - postgres
+      - redis
+      - neo4j
+    networks:
+      - qs-network
+    restart: unless-stopped
+
+  worker:
+    build: .
+    container_name: quantumshield-worker
+    command: celery -A app.worker.celery_app worker --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://quantumshield:qs_secret_2025@postgres:5432/quantumshield
+      - REDIS_URL=redis://redis:6379/0
+      - NEO4J_URI=bolt://neo4j:7687
+      - CELERY_BROKER_URL=redis://redis:6379/1
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - qs-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: quantumshield-db
+    environment:
+      POSTGRES_USER: quantumshield
+      POSTGRES_PASSWORD: qs_secret_2025
+      POSTGRES_DB: quantumshield
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - qs-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: quantumshield-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - qs-network
+    restart: unless-stopped
+
+  neo4j:
+    image: neo4j:5-community
+    container_name: quantumshield-graph
+    environment:
+      NEO4J_AUTH: neo4j/neo4j_secret
+    ports:
+      - "7474:7474" # HTTP browser
+      - "7687:7687" # Bolt protocol
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - qs-network
+    restart: unless-stopped
+
+networks:
+  qs-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+  neo4j_data:

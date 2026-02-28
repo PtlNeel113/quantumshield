@@ -1,0 +1,58 @@
+# QuantumShield Backend Dependencies
+# Core
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.1
+python-multipart==0.0.20
+
+# Database
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.1
+psycopg2-binary==2.9.10
+
+# Redis
+redis[hiredis]==5.2.1
+
+# Neo4j
+neo4j==5.27.0
+
+# Celery & Async Workers
+celery[redis]==5.4.0
+
+# Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.2.1
+
+# HTTP & Networking
+httpx==0.28.1
+aiohttp==3.11.11
+
+# TLS/Crypto Scanning
+cryptography==44.0.0
+pyOpenSSL==24.3.0
+
+# Data Processing
+numpy==2.2.1
+pandas==2.2.3
+
+# WebSockets
+websockets==14.1
+
+# Observability
+structlog==24.4.0
+prometheus-client==0.21.1
+prometheus-fastapi-instrumentator==7.0.2
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.0
+pytest-cov==6.0.0
+httpx==0.28.1
+
+# Utilities
+python-dotenv==1.0.1
+orjson==3.10.12
+tenacity==9.0.0
