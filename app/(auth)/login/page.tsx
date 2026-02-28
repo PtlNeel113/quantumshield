@@ -83,11 +83,10 @@ export default function LoginPage() {
                   </Label>
                   <Input
                     id="email"
-                    type="email"
+                    type="text"
                     placeholder="user@company.com"
                     value={email}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                    required
                     disabled={loading}
                     className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
                   />
@@ -104,7 +103,6 @@ export default function LoginPage() {
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
-                    required
                     disabled={loading}
                     className="bg-slate-900 border-slate-700 text-white placeholder:text-slate-500 focus:border-blue-500"
                   />
