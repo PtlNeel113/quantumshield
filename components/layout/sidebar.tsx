@@ -17,10 +17,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Loader2,
+  CheckCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 const navigationSections = [
   {
@@ -62,14 +64,75 @@ const navigationSections = [
   },
 ];
 
+const scanStages = [
+  { label: 'Initializing scan engine...', duration: 800 },
+  { label: 'Discovering network assets...', duration: 1200 },
+  { label: 'Scanning cryptographic configurations...', duration: 1500 },
+  { label: 'Analyzing algorithm strengths...', duration: 1300 },
+  { label: 'Computing quantum risk scores...', duration: 1000 },
+  { label: 'Generating threat assessment...', duration: 800 },
+  { label: 'Finalizing results...', duration: 600 },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [scanStage, setScanStage] = useState('');
+  const [scanComplete, setScanComplete] = useState(false);
+  const [lastScanTime, setLastScanTime] = useState('2025-02-28 14:23:15 UTC');
+  const [assetsScanned, setAssetsScanned] = useState(42847);
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
+
+  const startScan = useCallback(async () => {
+    if (scanning) return;
+
+    setScanning(true);
+    setScanComplete(false);
+    setScanProgress(0);
+    setScanStage(scanStages[0].label);
+
+    let totalDuration = scanStages.reduce((sum, s) => sum + s.duration, 0);
+    let elapsed = 0;
+
+    for (let i = 0; i < scanStages.length; i++) {
+      setScanStage(scanStages[i].label);
+
+      // Animate progress during this stage
+      const stageDuration = scanStages[i].duration;
+      const steps = 10;
+      const stepDuration = stageDuration / steps;
+
+      for (let s = 0; s < steps; s++) {
+        await new Promise(resolve => setTimeout(resolve, stepDuration));
+        elapsed += stepDuration;
+        setScanProgress(Math.min(100, (elapsed / totalDuration) * 100));
+      }
+    }
+
+    setScanProgress(100);
+    setScanStage('Scan complete!');
+    setScanComplete(true);
+    setScanning(false);
+
+    // Update scan info
+    const now = new Date();
+    const utcStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+    setLastScanTime(utcStr);
+    setAssetsScanned(prev => prev + Math.floor(Math.random() * 500) + 100);
+
+    // Reset complete state after 3 seconds
+    setTimeout(() => {
+      setScanComplete(false);
+      setScanProgress(0);
+      setScanStage('');
+    }, 4000);
+  }, [scanning]);
 
   return (
     <aside
@@ -175,24 +238,86 @@ export function Sidebar() {
               borderRadius: '6px',
               border: '1px solid rgba(255,255,255,0.04)',
             }}>
-              2025-02-28 14:23:15 UTC
+              {lastScanTime}
             </p>
-            <p className="text-[10px] text-slate-500">42,847 assets scanned</p>
+            <p className="text-[10px] text-slate-500">{assetsScanned.toLocaleString()} assets scanned</p>
           </div>
+
+          {/* Scan Progress */}
+          {(scanning || scanComplete) && (
+            <div className="p-3 rounded-xl space-y-2" style={{
+              background: scanComplete ? 'rgba(34,197,94,0.05)' : 'rgba(99,102,241,0.05)',
+              border: `1px solid ${scanComplete ? 'rgba(34,197,94,0.15)' : 'rgba(99,102,241,0.15)'}`,
+              animation: 'fadeInUp 0.3s ease-out',
+            }}>
+              {/* Progress Bar */}
+              <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div
+                  className="h-full rounded-full transition-all duration-300 ease-out"
+                  style={{
+                    width: `${scanProgress}%`,
+                    background: scanComplete
+                      ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+                      : 'linear-gradient(90deg, #6366f1, #818cf8)',
+                    boxShadow: scanComplete
+                      ? '0 0 8px rgba(34,197,94,0.4)'
+                      : '0 0 8px rgba(99,102,241,0.4)',
+                  }}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                {scanComplete ? (
+                  <CheckCircle className="w-3 h-3 text-green-400 flex-shrink-0" />
+                ) : (
+                  <Loader2 className="w-3 h-3 text-indigo-400 animate-spin flex-shrink-0" />
+                )}
+                <p className={`text-[10px] ${scanComplete ? 'text-green-400' : 'text-indigo-300'} truncate`}>
+                  {scanStage}
+                </p>
+              </div>
+              <p className="text-[10px] text-slate-500 text-right tabular-nums font-mono">
+                {Math.round(scanProgress)}%
+              </p>
+            </div>
+          )}
 
           {/* Start Scan Button */}
           <Button
-            className="w-full h-10 text-sm font-semibold text-white rounded-xl transition-all duration-300"
+            className={cn(
+              'w-full h-10 text-sm font-semibold text-white rounded-xl transition-all duration-300',
+              scanning && 'opacity-75 cursor-not-allowed'
+            )}
             style={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)',
+              background: scanComplete
+                ? 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)'
+                : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+              boxShadow: scanComplete
+                ? '0 4px 12px rgba(34, 197, 94, 0.25)'
+                : '0 4px 12px rgba(99, 102, 241, 0.25)',
             }}
+            disabled={scanning}
+            onClick={startScan}
           >
-            <Zap className="w-4 h-4 mr-2" />
-            Start Scan
+            {scanning ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Scanning...
+              </>
+            ) : scanComplete ? (
+              <>
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Scan Complete
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4 mr-2" />
+                Start Scan
+              </>
+            )}
           </Button>
         </div>
       )}
     </aside>
   );
 }
+
