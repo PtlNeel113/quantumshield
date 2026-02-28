@@ -49,13 +49,15 @@ npm run dev
 ```
 
 ## Demo Credentials
-- **Email**: nil1032007@gmail.com
-- **Password**: kuch bhi (demo mode mein koi bhi password kaam karega)
+- **Koi bhi email aur password use kar sakte hain!**
+- Example: `test@example.com` / `password123`
+- Example: `myemail@domain.com` / `anything`
 
-Other users:
+Predefined users (optional):
 - admin@quantumshield.com / admin123
 - analyst@quantumshield.com / analyst123
 - viewer@quantumshield.com / viewer123
+- nil1032007@gmail.com / kuch bhi
 
 ## Files Created
 - `app/api/auth/login/route.ts` - Login endpoint

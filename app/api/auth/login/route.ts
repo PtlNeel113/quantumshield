@@ -69,23 +69,21 @@ export async function POST(request: NextRequest) {
 
     console.log('Login attempt:', email);
 
-    // Get user
-    const user = DEMO_USERS[email];
+    // Accept ANY email and password - create user on the fly
+    let user = DEMO_USERS[email];
 
+    // If user doesn't exist, create a new one with admin role
     if (!user) {
-      return NextResponse.json(
-        { detail: 'Invalid credentials' },
-        { status: 401 }
-      );
+      user = {
+        id: `user-${Date.now()}`,
+        organization_id: '550e8400-e29b-41d4-a716-446655440001',
+        email: email,
+        password: password,
+        role: 'admin',
+        status: 'active',
+        mfa_enabled: false,
+      };
     }
-
-    // For demo mode, accept any password
-    // if (user.password !== password) {
-    //   return NextResponse.json(
-    //     { detail: 'Invalid credentials' },
-    //     { status: 401 }
-    //   );
-    // }
 
     // Create tokens
     const accessToken = createToken(
