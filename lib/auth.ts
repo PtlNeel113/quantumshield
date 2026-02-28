@@ -45,7 +45,7 @@ export interface TokenPayload {
 }
 
 /**
- * Login user
+ * Login user — accepts any email/password for demo/hackathon mode
  */
 export async function login(credentials: LoginCredentials): Promise<{
   success: boolean;
@@ -54,56 +54,52 @@ export async function login(credentials: LoginCredentials): Promise<{
 }> {
   try {
     console.log("🔍 Login attempt:", credentials.email);
-    console.log("🔍 API URL:", `${API_BASE_URL}/auth/login`);
-    
-    // Generate device fingerprint if not provided
-    if (!credentials.device_fingerprint) {
-      credentials.device_fingerprint = generateDeviceFingerprint();
-    }
-    
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(credentials),
-    });
 
-    console.log("🔍 Response status:", response.status);
+    // --- Demo/Hackathon mode: accept any credentials ---
+    const now = Math.floor(Date.now() / 1000);
+    const exp = now + 86400; // 24 hours
 
-    if (response.ok) {
-      const data: LoginResponse = await response.json();
-      
-      console.log("✅ Login successful:", data);
-      
-      // Store tokens
-      setAccessToken(data.access_token);
-      setRefreshToken(data.refresh_token);
-      
-      // Store user data
-      localStorage.setItem("user", JSON.stringify(data.user));
-      
-      return { success: true };
-    }
+    // Build a fake JWT-like token (header.payload.signature) so isAuthenticated() works
+    const header = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+    const payload = btoa(
+      JSON.stringify({
+        sub: "demo-user-001",
+        org: "demo-org",
+        role: "admin",
+        email: credentials.email,
+        type: "access",
+        iat: now,
+        exp: exp,
+      })
+    );
+    const fakeToken = `${header}.${payload}.demo-signature`;
 
-    // Check if MFA is required
-    if (response.status === 403) {
-      const mfaRequired = response.headers.get("X-MFA-Required");
-      if (mfaRequired === "true") {
-        return { success: false, mfaRequired: true };
-      }
-    }
-
-    const error = await response.json();
-    return {
-      success: false,
-      error: error.detail || "Login failed",
+    // Build a mock user object
+    const mockUser: User = {
+      id: "demo-user-001",
+      organization_id: "demo-org",
+      email: credentials.email,
+      role: "admin",
+      status: "active",
+      mfa_enabled: false,
+      last_login: new Date().toISOString(),
+      created_at: "2024-01-01T00:00:00Z",
     };
+
+    // Store tokens
+    setAccessToken(fakeToken);
+    setRefreshToken(`refresh-${fakeToken}`);
+
+    // Store user data
+    localStorage.setItem("user", JSON.stringify(mockUser));
+
+    console.log("✅ Login successful (demo mode):", mockUser.email);
+    return { success: true };
   } catch (error) {
     console.error("Login error:", error);
     return {
       success: false,
-      error: "Network error. Please try again.",
+      error: "An unexpected error occurred. Please try again.",
     };
   }
 }
@@ -114,7 +110,7 @@ export async function login(credentials: LoginCredentials): Promise<{
 export async function logout(): Promise<void> {
   try {
     const token = getAccessToken();
-    
+
     if (token) {
       await fetch(`${API_BASE_URL}/auth/logout`, {
         method: "POST",
@@ -138,7 +134,7 @@ export async function logout(): Promise<void> {
 export async function refreshAccessToken(): Promise<boolean> {
   try {
     const refreshToken = getRefreshToken();
-    
+
     if (!refreshToken) {
       return false;
     }
@@ -174,7 +170,7 @@ export async function refreshAccessToken(): Promise<boolean> {
 export async function getCurrentUser(): Promise<User | null> {
   try {
     const token = getAccessToken();
-    
+
     if (!token) {
       return null;
     }
@@ -209,7 +205,7 @@ export async function getCurrentUser(): Promise<User | null> {
  */
 export function isAuthenticated(): boolean {
   const token = getAccessToken();
-  
+
   if (!token) {
     return false;
   }
@@ -217,7 +213,7 @@ export function isAuthenticated(): boolean {
   try {
     const decoded = jwtDecode<TokenPayload>(token);
     const now = Date.now() / 1000;
-    
+
     // Check if token is expired
     if (decoded.exp < now) {
       return false;
@@ -379,7 +375,7 @@ export async function authenticatedFetch(
   // If unauthorized, try to refresh token
   if (response.status === 401) {
     const refreshed = await refreshAccessToken();
-    
+
     if (refreshed) {
       // Retry request with new token
       const newToken = getAccessToken();
@@ -405,9 +401,9 @@ function generateDeviceFingerprint(): string {
   const platform = navigator.platform;
   const screenResolution = `${screen.width}x${screen.height}`;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  
+
   const fingerprint = `${userAgent}-${language}-${platform}-${screenResolution}-${timezone}`;
-  
+
   // Create a simple hash
   let hash = 0;
   for (let i = 0; i < fingerprint.length; i++) {
@@ -415,6 +411,6 @@ function generateDeviceFingerprint(): string {
     hash = ((hash << 5) - hash) + char;
     hash = hash & hash;
   }
-  
+
   return Math.abs(hash).toString(36);
 }

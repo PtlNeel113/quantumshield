@@ -38,16 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = async () => {
     try {
       if (isAuthenticated()) {
-        // Try to get user from storage first
+        // Use stored user data (demo/hackathon mode — no backend API call)
         const storedUser = getStoredUser();
         if (storedUser) {
           setUser(storedUser);
-        }
-
-        // Fetch fresh user data
-        const currentUser = await getCurrentUser();
-        if (currentUser) {
-          setUser(currentUser);
         } else {
           setUser(null);
         }
